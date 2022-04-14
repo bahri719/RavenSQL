@@ -1,0 +1,58 @@
+--------------------  ************************************************************************
+--------------------          SECOND STEP: CALCULATING THE DIFFERENT TIME SUMMATION 
+--------------------  ************************************************************************
+
+CREATE OR REPLACE FUNCTION createSummationTable_processes(sourceTableName TEXT)
+  RETURNS VOID
+  LANGUAGE plpgsql AS
+$func$
+BEGIN
+  EXECUTE format(E'             -- format E before single qutation and \ single qutation is used for making it possible to use extral single qutation between two single qutation.
+  CREATE TEMPORARY TABLE tempSummation_processes_%I  AS(
+      SELECT 
+          t."Year"  as "Year",
+          t."Month" as "Month",
+          t."Week"  as "Week",
+          t."Day"   as "Day",
+          t."shift" as "shift",
+          t."processName",
+        
+          SUM (t."producingDuration")/ (SUM (t."uptimeDuration") + 0.01) AS "Uptime" ,
+        
+          SUM (t."producingDuration")/ (SUM (t."availibilityDuration") + 0.01) AS "Availibility" ,
+        
+          SUM (t."producingDuration")/ (SUM (t."teepDuration") + 0.01) AS "TEEP" ,
+          
+          SUM (t."output") AS "output",
+          
+          SUM (t."ExpectedOutput") AS "target",
+        
+          (CASE WHEN  SUM("output") > 0 THEN (SUM("output")/(SUM("ExpectedOutput") + 0.01)) ELSE 0 END) AS "OEE" ,
+          
+          SUM (t."producingDuration") AS "producing",
+        
+          SUM (t."plannedDuration") AS "planned",
+        
+          SUM (t."unplannedDuration") AS "unplanned",
+        
+          SUM (t."waitingDuration") AS "waiting",
+        
+          SUM (t."notScheduledDuration") AS "notScheduled",
+        
+          SUM (t."unknownDuration") AS "unknown",
+        
+          SUM (t."uncollectedDuration") AS "uncollected"
+        
+      FROM tempAddedNecessary_%I  t
+      GROUP BY t."Year", t."Month", t."Week", t."Day", t."shift", t."processName" 
+      )', sourceTableName, sourceTableName);
+END
+$func$;
+
+
+--------------------  ************************************************************************
+--------------------                THE WAY THAT YOU CAN CALL THIS FUNCTION 
+--------------------  ************************************************************************
+-- SELECT createAddedNecessaryTable('sanofii');
+-- SELECT createSummationTable_processes('sanofii');
+-- SELECT * FROM tempSummation_processes_sanofii
