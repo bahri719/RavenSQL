@@ -1,0 +1,39 @@
+--------------------  ************************************************************************
+--------------------          CALCULATING THE DURATION OF ALL TAGs FOR PROCESSES 
+--------------------  ************************************************************************
+
+CREATE OR REPLACE FUNCTION createTagsDurationTable_processes(sourceTableName TEXT)
+  RETURNS VOID
+  LANGUAGE plpgsql AS
+$func$
+BEGIN
+  EXECUTE format(E'             -- format E before single qutation and \ single qutation is used for making it possible to use extral single qutation between two single qutation.
+  CREATE TEMPORARY TABLE tempTagsDuration_processes_%I  AS(
+      SELECT 
+          t."Year",
+          t."Month",
+          t."Week",
+          t."Day",
+          t."shift",
+          t."processName",
+          t."pnlCategory",
+          t."tagName",
+
+          SUM (t."duration") AS "duration"
+
+        
+      FROM tempAddedNecessary_%I  t
+      GROUP BY t."Year", t."Month", t."Week", t."Day", t."shift", t."processName", t."pnlCategory", t."tagName"
+      ORDER BY "Year", "Month", "Week", "Day", "shift", "processName", "pnlCategory", "duration" DESC 
+      )', sourceTableName, sourceTableName);
+END
+$func$;
+
+
+--------------------  ************************************************************************
+--------------------                THE WAY THAT YOU CAN CALL THIS FUNCTION 
+--------------------  ************************************************************************
+-- SELECT createAddedNecessaryTable('sanofii');
+-- SELECT createTagsDurationTable_processes('sanofii');
+
+-- SELECT * FROM tempTagsDuration_processes_sanofii
