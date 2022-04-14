@@ -1,0 +1,58 @@
+--------------------  ************************************************************************
+--------------------     CALCUTATING THE DURATION OF 5 GREATEST DOWNTIME IN EACH CATEGORY 
+--------------------  ************************************************************************
+
+CREATE OR REPLACE FUNCTION sumOfDowntimesDetails_processes(sourceTableName TEXT)
+  RETURNS VOID
+  LANGUAGE plpgsql AS
+$func$
+DECLARE 
+  tagName TEXT  ARRAY[5];
+  tableName TEXT;
+  counter INTEGER;
+  col1Name TEXT;
+  col2Name TEXT;
+BEGIN -- list of all category that have sub tag
+  tagName[1] := 'planned';
+  tagName[2] := 'unplanned';
+  tagName[3] := 'waiting';
+  tagName[4] := 'notScheduled';
+  tableName  := sourceTableName;
+  counter := 5; -- Number of sub tag in each category that we should extract
+  PERFORM  createAddedNecessaryTable(tableName);
+  PERFORM  createSummationTable_processes(tableName);
+  PERFORM  createTagsDurationTable_processes(tableName);
+  FOR i IN 1..4 LOOP
+    FOR counter IN 1..5 LOOP
+          col1Name := CONCAT(tagName[i], '_', counter);
+          col2Name := CONCAT(tagName[i], '_', counter, '_duration');
+          EXECUTE 'DROP TABLE IF exists tempNthTagTable_processes_' || tableName;
+          PERFORM  createTempNthTagTable_processes(tableName, tagName[i], counter);
+      
+          EXECUTE '
+          CREATE TEMPORARY TABLE temp1 AS 
+          (
+              SELECT 
+                t.*,
+                n."tagName"  AS ' ||  col1Name || ',
+                n."duration" AS ' ||  col2Name || '
+                
+              FROM
+                  tempSummation_processes_'|| tableName ||' t
+              LEFT JOIN tempNthTagTable_processes_' || tableName || ' n
+                                    ON  t."Year"        = n."Year"
+                                    AND t."Month"       = n."Month"
+                                    AND t."Week"        = n."Week" 
+                                    AND t."Day"         = n."Day" 
+                                    AND t."shift"       = n."shift" 
+                                    AND t."processName" = n."processName")';
+          EXECUTE 'DROP TABLE IF exists tempSummation_processes_' || tableName ;
+          EXECUTE 'ALTER TABLE temp1 RENAME TO tempSummation_processes_' || tableName ;
+    END LOOP;
+  END LOOP;
+END
+$func$;          
+
+
+-- SELECT sumOfDowntimesDetails_processes('sanofii');
+-- SELECT * FROM tempSummation_processes_sanofii;
