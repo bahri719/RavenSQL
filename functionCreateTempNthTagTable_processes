@@ -1,0 +1,34 @@
+--------------------  ************************************************************************
+--------------------    FIND THE Nth TAG IN EACH CATEGORY AND RELATED DURATION FOR PROCESSES 
+--------------------  ************************************************************************
+
+CREATE OR REPLACE FUNCTION createTempNthTagTable_processes(sourceTableName TEXT, category TEXT, rn INTEGER)
+  RETURNS VOID
+  LANGUAGE plpgsql AS
+$func$
+BEGIN
+  EXECUTE '
+  CREATE TEMPORARY TABLE tempNthTagTable_processes_'||sourceTableName||' AS
+    (
+      SELECT  *
+          FROM 
+          (
+            SELECT  *,
+            row_number() OVER ( PARTITION BY "Year", "Month", "Week", "Day", "shift", "processName", "pnlCategory" order by "Year", "Month", "Week", "Day", "shift", "processName", "duration" DESC ) as rn
+            FROM  tempTagsDuration_processes_'||sourceTableName||'
+          ) x
+        WHERE x.rn ='||rn||' AND  "pnlCategory" = '''||category||'''
+    )';
+END
+$func$;
+
+
+
+--------------------  ************************************************************************
+--------------------                THE WAY THAT YOU CAN CALL THIS FUNCTION 
+--------------------  ************************************************************************
+-- SELECT createAddedNecessaryTable('sanofii');
+-- SELECT createTagsDurationTable_processes('sanofii');
+-- SELECT createTempNthTagTable_processes('sanofii', 'waiting', 3);
+
+-- SELECT * FROM tempNthTagTable_processes_sanofii
