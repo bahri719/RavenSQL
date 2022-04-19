@@ -1,0 +1,46 @@
+--------------------  ************************************************************************
+--------------------          CALCULATING THE DURATION OF ALL TAGs FOR PROCESSES 
+--------------------  ************************************************************************
+
+CREATE OR REPLACE FUNCTION createTagsDurationTable(sourceTableName TEXT)
+  RETURNS VOID
+  LANGUAGE plpgsql AS
+$func$
+BEGIN
+  PERFORM  createAddedNecessaryTable(sourceTableName);
+  EXECUTE format(E'             -- format E before single qutation and \ single qutation is used for making it possible to use extral single qutation between two single qutation.
+  CREATE TEMPORARY TABLE tempTagsDuration_%I  AS(
+      SELECT 
+          t."Year"  as "Year",
+          t."Month" as "Month",
+          t."Week"  as "Week",
+          t."Day"   as "Day",
+          t."shift" as "shift",
+          t."processGroup",
+          t."processName",
+          t."shiftDuration",
+          t."skuName",
+          t."operatorId",
+          t."targetRate",
+
+          t."pnlCategory",
+          t."tagName",
+
+          SUM (t."duration") AS "duration"
+
+        
+      FROM tempAddedNecessary_%I  t
+      GROUP BY t."Year", t."Month", t."Week", t."Day", t."shift", t."processGroup", t."processName", t."skuName", t."operatorId" , t."shiftDuration", t."targetRate", t."pnlCategory", t."tagName"
+      ORDER BY t."Year", t."Month", t."Week", t."Day", t."shift", t."processGroup", t."processName", t."skuName", t."operatorId" , t."shiftDuration", t."targetRate", t."pnlCategory", "duration" DESC 
+      )', sourceTableName, sourceTableName);
+END
+$func$;
+
+
+--------------------  ************************************************************************
+--------------------                THE WAY THAT YOU CAN CALL THIS FUNCTION 
+--------------------  ************************************************************************
+SELECT createAddedNecessaryTable('sanofii');
+SELECT createTagsDurationTable('sanofii');
+
+SELECT * FROM tempTagsDuration_sanofii
