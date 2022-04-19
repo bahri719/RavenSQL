@@ -1,0 +1,129 @@
+--------------------  ************************************************************************
+--------------------   FIRST STEP: CALCULATING THE BASIC PARAMETER AND ADDING THEM TO RAW DATA 
+--------------------  ************************************************************************
+
+CREATE OR REPLACE FUNCTION createAddedNecessaryTable(sourceTableName TEXT)
+  RETURNS VOID
+  LANGUAGE plpgsql AS
+$func$
+BEGIN
+  EXECUTE format(E'             -- format E before single qutation and \ single qutation is used for making it possible to use extral single qutation between two single qutation.
+  CREATE TEMPORARY TABLE IF NOT EXISTS tempAddedNecessary_%I  AS(
+      SELECT *,  
+        EXTRACT(Year  FROM DATE \'1970-01-01\' + cast((ge/(3600000*24)) AS INT)) AS  "Year",
+        EXTRACT(Month FROM DATE \'1970-01-01\' + cast((ge/(3600000*24)) AS INT)) AS  "Month",
+        EXTRACT(Week  FROM DATE \'1970-01-01\' + cast((ge/(3600000*24)) AS INT)) AS  "Week",
+        EXTRACT(Day   FROM DATE \'1970-01-01\' + cast((ge/(3600000*24)) AS INT)) AS  "Day",
+        date \'1970-01-01\' + cast((ge/(3600000*24)) AS INT) AS  "DateStamp",
+        
+
+        (lt - ge)/60000 AS "duration",  -- duratioh is added in this line
+        
+        ("shiftEnd" - "shiftStart")/60 AS "shiftDuration",  -- shift duratioh is added in this line
+
+        
+        CASE                            -- in this CASE scheduled time is calculated
+          WHEN  ( "pnlCategory" = \'unknown\' OR
+                  "pnlCategory" = \'planned\' OR
+                  "pnlCategory" = \'producing\' OR
+                  "pnlCategory" = \'unplanned\')
+          THEN (lt - ge)/60000 
+          ELSE 0
+        END AS "scheduledTime",
+
+        CASE                            -- in this CASE Expected output calculated
+          WHEN  ( "pnlCategory" = \'unknown\' OR
+                  "pnlCategory" = \'planned\' OR
+                  "pnlCategory" = \'producing\' OR
+                  "pnlCategory" = \'unplanned\')
+          THEN ((lt - ge)/60000) * "targetRate" 
+          ELSE 0
+        END AS "ExpectedOutput",
+        
+
+        CASE                            -- in this CASE the neccessary time for finding TEEP is calculated
+          WHEN  ( "pnlCategory" = \'producing\' OR
+                  "pnlCategory" = \'unplanned\' OR
+                  "pnlCategory" = \'unknown\' OR
+                  "pnlCategory" = \'planned\' OR
+                  "pnlCategory" = \'notScheduled\' OR
+                  "pnlCategory" = \'waiting\' )
+          THEN (lt - ge)/60000 
+          ELSE 0
+        END AS "teepDuration",
+
+        CASE                            -- in this CASE the neccessary time for finding Availibilty is calculated
+          WHEN  ( "pnlCategory" = \'producing\' OR
+                  "pnlCategory" = \'unplanned\' OR
+                  "pnlCategory" = \'unknown\' OR
+                  "pnlCategory" = \'planned\' OR
+                  "pnlCategory" = \'waiting\' )
+          THEN (lt - ge)/60000 
+          ELSE 0
+        END AS "availibilityDuration",        
+
+        CASE                            -- in this CASE the neccessary time for finding Uptime is calculated
+          WHEN  ( "pnlCategory" = \'producing\' OR
+                  "pnlCategory" = \'unplanned\' OR
+                  "pnlCategory" = \'unknown\' OR
+                  "pnlCategory" = \'waiting\' )
+          THEN (lt - ge)/60000 
+          ELSE 0
+        END AS "uptimeDuration",
+        
+        CASE                            -- in this CASE producing duration is calculated
+          WHEN  "pnlCategory" = \'producing\' 
+          THEN (lt - ge)/60000 
+          ELSE 0
+        END AS "producingDuration",
+        
+        CASE                            -- in this CASE planned duration is calculated
+          WHEN  "pnlCategory" = \'planned\' 
+          THEN (lt - ge)/60000 
+          ELSE 0
+        END AS "plannedDuration",
+        
+        CASE                            -- in this CASE unplanned duration is calculated
+          WHEN  "pnlCategory" = \'unplanned\' 
+          THEN (lt - ge)/60000 
+          ELSE 0
+        END AS "unplannedDuration",
+        
+        CASE                            -- in this CASE notScheduled duration is calculated
+          WHEN  "pnlCategory" = \'notScheduled\' 
+          THEN (lt - ge)/60000 
+          ELSE 0
+        END AS "notScheduledDuration",
+
+        CASE                            -- in this CASE unknown duration is calculated
+          WHEN  "pnlCategory" = \'unknown\' 
+          THEN (lt - ge)/60000 
+          ELSE 0
+        END AS "unknownDuration",
+        
+
+        CASE                            -- in this CASE waiting duration is calculated
+          WHEN  "pnlCategory" = \'waiting\' 
+          THEN (lt - ge)/60000 
+          ELSE 0
+        END AS "waitingDuration",
+        
+
+        CASE                            -- in this CASE uncollected duration is calculated
+          WHEN  "pnlCategory" = \'uncollected\' 
+          THEN (lt - ge)/60000 
+          ELSE 0
+        END AS "uncollectedDuration"
+
+      FROM %I 
+      )', sourceTableName, sourceTableName);
+END
+$func$;
+
+
+--------------------  ************************************************************************
+--------------------                THE WAY THAT YOU CAN CALL THIS FUNCTION 
+--------------------  ************************************************************************
+-- SELECT createAddedNecessaryTable('sanofii');
+
+-- SELECT * FROM tempAddedNecessary_sanofii
