@@ -1,0 +1,16 @@
+CREATE OR REPLACE FUNCTION main(sourceTableName TEXT)
+  RETURNS VOID
+  LANGUAGE plpgsql AS
+$func$
+DECLARE 
+  tableName TEXT;
+BEGIN -- list of all category that have sub tag
+  tableName  := sourceTableName;
+  PERFORM  addSumOfDowntimesDetails(tableName);
+END
+$func$;          
+
+
+SELECT main('sanofii');
+
+SELECT * FROM tempSummation_sanofii;
