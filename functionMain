@@ -4,13 +4,18 @@ CREATE OR REPLACE FUNCTION main(sourceTableName TEXT)
 $func$
 DECLARE 
   tableName TEXT;
-BEGIN -- list of all category that have sub tag
+BEGIN 
   tableName  := sourceTableName;
   PERFORM  addSumOfDowntimesDetails(tableName);
+  EXECUTE FORMAT(E' DROP TABLE IF EXISTS ext_%I;
+                    CREATE TABLE ext_%I AS 
+                      SELECT * FROM tempSummation_%I
+                      ORDER BY "Year", "Month", "Week", "Day", "shift", "processGroup", "processName", "skuName", "operatorId" 
+                      ', sourceTableName, sourceTableName, sourceTableName);
 END
 $func$;          
 
 
 SELECT main('sanofii');
 
-SELECT * FROM tempSummation_sanofii;
+SELECT * FROM ext_sanofii;
