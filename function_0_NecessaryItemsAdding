@@ -15,11 +15,11 @@ BEGIN
         EXTRACT(Week  FROM DATE \'1970-01-01\' + cast((ge/(3600000*24)) AS INT)) AS  "Week",
         EXTRACT(Day   FROM DATE \'1970-01-01\' + cast((ge/(3600000*24)) AS INT)) AS  "Day",
         date \'1970-01-01\' + cast((ge/(3600000*24)) AS INT) AS  "DateStamp",
+        ("shiftEnd" - "shiftStart")/60 AS "shiftDuration",  -- shift duratioh is added in this line
         
 
-        (lt - ge)/60000 AS "duration",  -- duratioh is added in this line
+        ("lt" - "ge") AS "duration",  -- duratioh is added in this line
         
-        ("shiftEnd" - "shiftStart")/60 AS "shiftDuration",  -- shift duratioh is added in this line
 
         
         CASE                            -- in this CASE scheduled time is calculated
@@ -27,7 +27,7 @@ BEGIN
                   "pnlCategory" = \'planned\' OR
                   "pnlCategory" = \'producing\' OR
                   "pnlCategory" = \'unplanned\')
-          THEN (lt - ge)/60000 
+          THEN (lt - ge) 
           ELSE 0
         END AS "scheduledTime",
 
@@ -36,7 +36,7 @@ BEGIN
                   "pnlCategory" = \'planned\' OR
                   "pnlCategory" = \'producing\' OR
                   "pnlCategory" = \'unplanned\')
-          THEN ((lt - ge)/60000) * "targetRate" 
+          THEN (lt - ge) * "targetRate" 
           ELSE 0
         END AS "ExpectedOutput",
         
@@ -48,7 +48,7 @@ BEGIN
                   "pnlCategory" = \'planned\' OR
                   "pnlCategory" = \'notScheduled\' OR
                   "pnlCategory" = \'waiting\' )
-          THEN (lt - ge)/60000 
+          THEN (lt - ge) 
           ELSE 0
         END AS "teepDuration",
 
@@ -58,7 +58,7 @@ BEGIN
                   "pnlCategory" = \'unknown\' OR
                   "pnlCategory" = \'planned\' OR
                   "pnlCategory" = \'waiting\' )
-          THEN (lt - ge)/60000 
+          THEN (lt - ge) 
           ELSE 0
         END AS "availibilityDuration",        
 
@@ -67,51 +67,51 @@ BEGIN
                   "pnlCategory" = \'unplanned\' OR
                   "pnlCategory" = \'unknown\' OR
                   "pnlCategory" = \'waiting\' )
-          THEN (lt - ge)/60000 
+          THEN (lt - ge) 
           ELSE 0
         END AS "uptimeDuration",
         
         CASE                            -- in this CASE producing duration is calculated
           WHEN  "pnlCategory" = \'producing\' 
-          THEN (lt - ge)/60000 
+          THEN (lt - ge) 
           ELSE 0
         END AS "producingDuration",
         
         CASE                            -- in this CASE planned duration is calculated
           WHEN  "pnlCategory" = \'planned\' 
-          THEN (lt - ge)/60000 
+          THEN (lt - ge) 
           ELSE 0
         END AS "plannedDuration",
         
         CASE                            -- in this CASE unplanned duration is calculated
           WHEN  "pnlCategory" = \'unplanned\' 
-          THEN (lt - ge)/60000 
+          THEN (lt - ge) 
           ELSE 0
         END AS "unplannedDuration",
         
         CASE                            -- in this CASE notScheduled duration is calculated
           WHEN  "pnlCategory" = \'notScheduled\' 
-          THEN (lt - ge)/60000 
+          THEN (lt - ge) 
           ELSE 0
         END AS "notScheduledDuration",
 
         CASE                            -- in this CASE unknown duration is calculated
           WHEN  "pnlCategory" = \'unknown\' 
-          THEN (lt - ge)/60000 
+          THEN (lt - ge) 
           ELSE 0
         END AS "unknownDuration",
         
 
         CASE                            -- in this CASE waiting duration is calculated
           WHEN  "pnlCategory" = \'waiting\' 
-          THEN (lt - ge)/60000 
+          THEN (lt - ge) 
           ELSE 0
         END AS "waitingDuration",
         
 
         CASE                            -- in this CASE uncollected duration is calculated
           WHEN  "pnlCategory" = \'uncollected\' 
-          THEN (lt - ge)/60000 
+          THEN (lt - ge) 
           ELSE 0
         END AS "uncollectedDuration"
 
@@ -124,6 +124,6 @@ $func$;
 --------------------  ************************************************************************
 --------------------                THE WAY THAT YOU CAN CALL THIS FUNCTION 
 --------------------  ************************************************************************
--- SELECT createAddedNecessaryTable('sanofii');
+SELECT createAddedNecessaryTable('sanofii');
 
--- SELECT * FROM tempAddedNecessary_sanofii
+SELECT * FROM tempAddedNecessary_sanofii s
