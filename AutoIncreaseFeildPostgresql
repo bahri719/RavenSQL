@@ -1,0 +1,19 @@
+-- first run sach a function
+
+CREATE OR REPLACE FUNCTION fn_autoName_TV()
+  RETURNS "pg_catalog"."trigger" AS $BODY$ 
+begin
+new.device_name = 'TV'||CAST((SELECT COUNT(*)+1 FROM external_display) AS  TEXT);
+return NEW;
+end;
+$BODY$
+  LANGUAGE plpgsql VOLATILE
+  COST 100
+
+
+-- then create this trigger
+CREATE TRIGGER autoName_TV
+  BEFORE insert 
+  ON external_display
+  FOR EACH ROW
+  EXECUTE PROCEDURE fn_autoName_TV();  
