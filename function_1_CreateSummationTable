@@ -11,42 +11,77 @@ BEGIN
   EXECUTE format(E'             -- format E before single qutation and \ single qutation is used for making it possible to use extral single qutation between two single qutation.
   CREATE TEMPORARY TABLE tempSummation_%I  AS(
       SELECT 
-          t."Year"  as "Year",
-          t."Month" as "Month",
-          t."Week"  as "Week",
-          t."Day"   as "Day",
-          t."shift" as "shift",
+          t."Year",
+          t."Month",
+          t."Week",
+          t."Day",
+          t."shift",
           t."processGroup",
           t."processName",
           t."shiftDuration",
           t."skuName",
           t."operatorId",
           t."targetRate",
+          t."rateDenominator",
 
-          SUM (t."output")  AS "output",
+          SUM (t."output")                              AS "output",
           
-          SUM (t."ExpectedOutput") AS "ExpectedOutput",
+          SUM (t."ExpectedOutput") / "rateDenominator"  AS "ExpectedOutput",
           
-          SUM (t."scheduledTime") AS "scheduledTime",
+          SUM(t."scheduledTime") / 60000                AS "scheduledTime",
           
-          SUM (t."producingDuration") AS "producingTime",
-        
-          SUM (t."plannedDuration") AS "plannedTime",
-        
-          SUM (t."unplannedDuration") AS "unplannedTime",
-        
-          SUM (t."waitingDuration") AS "waitingTime",
-        
-          SUM (t."notScheduledDuration") AS "notScheduledTime",
-        
-          SUM (t."unknownDuration") AS "unknownTime",
-        
-          SUM (t."uncollectedDuration") AS "uncollectedTime"
-        
+          SUM(t."producingDuration") / 60000            AS "producingTime",
+          
+          SUM(t."plannedDuration") / 60000              AS "plannedTime",
+          
+          SUM(t."unplannedDuration") / 60000            AS "unplannedTime",
+          
+          SUM(t."waitingDuration") / 60000              AS "waitingTime",
+          
+          SUM(t."notScheduledDuration") / 60000         AS "notScheduledTime",
+          
+          SUM(t."unknownDuration") / 60000              AS "unknownTime",
+          
+          SUM(t."uncollectedDuration") / 60000          AS "uncollectedTime"
+          
       FROM tempAddedNecessary_%I  t
-      GROUP BY t."Year", t."Month", t."Week", t."Day", t."shift", t."processGroup", t."processName", t."skuName", t."operatorId" , t."shiftDuration", t."targetRate"
+      GROUP BY t."Year", t."Month", t."Week", t."Day", t."shift", t."processGroup", t."processName", t."skuName", t."operatorId" , t."shiftDuration", t."targetRate", t."rateDenominator"
       ORDER BY t."Year", t."Month", t."Week", t."Day", t."shift", t."processGroup", t."processName", t."skuName", t."operatorId" , t."shiftDuration", t."targetRate"
       )', sourceTableName, sourceTableName);
+      
+  EXECUTE 'DROP TABLE IF exists temp11';
+  EXECUTE FORMAT(E'
+          CREATE TEMPORARY TABLE temp11 AS 
+            (SELECT 
+                t."Year",
+                t."Month",
+                t."Week",
+                t."Day",
+                t."shift",
+                t."processGroup",
+                t."processName",
+                t."shiftDuration",
+                t."skuName",
+                t."operatorId",
+                t."output",
+                t."ExpectedOutput",
+                t."scheduledTime",
+                t."producingTime",
+                t."plannedTime",
+                t."unplannedTime",
+                t."waitingTime",
+                t."notScheduledTime",
+                t."unknownTime",
+                t."uncollectedTime"
+            FROM tempSummation_%I t);
+            
+            DROP TABLE IF exists tempSummation_%I;
+            
+            ALTER TABLE temp11 RENAME TO tempSummation_%I;
+            
+            DROP TABLE IF exists temp11
+            ', sourceTableName, sourceTableName, sourceTableName);
+            
 END
 $func$;
 
