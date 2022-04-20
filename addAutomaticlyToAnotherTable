@@ -1,0 +1,24 @@
+-- by adding a new record to a table it should automaticlly add to another table
+
+
+
+CREATE OR REPLACE FUNCTION fn_addTV2Shipping()
+  RETURNS "pg_catalog"."trigger" AS $BODY$ 
+begin
+INSERT INTO shipping (shipping_date, device_serial, ship_to_customer_id)
+       VALUES (CURRENT_DATE, NEW.device_name, 1);
+return NEW;
+end;
+$BODY$
+  LANGUAGE plpgsql VOLATILE
+  COST 100
+
+
+
+
+
+CREATE TRIGGER trig_addTV2Shipping
+  AFTER insert 
+  ON external_display
+  FOR EACH ROW
+  EXECUTE PROCEDURE fn_addTV2Shipping();
