@@ -1,0 +1,152 @@
+--------------------  ************************************************************************
+--------------------                     GETTING PNL CATEGORY DETAIL
+--------------------  ************************************************************************
+
+CREATE OR REPLACE FUNCTION gettingPnlCategoryDetail(sourceTableName TEXT)
+  RETURNS VOID
+  LANGUAGE plpgsql AS
+$func$
+DECLARE 
+  itemList TEXT ARRAY[10] DEFAULT  ARRAY ['Year', 'Month', 'Week', 'Day', 'shift'];
+  tagName TEXT  ARRAY[5]  DEFAULT  ARRAY ['planned', 'unplanned', 'waiting', 'notScheduled', 'producing', 'unknown', 'uncollected'];
+  tableName TEXT;
+  counter INTEGER;
+  col1Name TEXT;
+  col2Name TEXT;
+  col3Name TEXT;
+BEGIN -- list of all category that have sub tag
+  tableName  := sourceTableName;
+  
+  EXECUTE 'CREATE TEMPORARY TABLE tempTagsList1 AS 
+    (
+      SELECT 
+       "'||itemList[1]||'" AS Year
+      ,"'||COALESCE(itemList[2], itemList[1])||'" AS Month 
+      ,"'||COALESCE(itemList[3], itemList[2], itemList[1])||'" AS Week
+      ,"'||COALESCE(itemList[4], itemList[3], itemList[2], itemList[1])||'" AS Day
+      ,"'||COALESCE(itemList[5], itemList[4], itemList[3], itemList[2], itemList[1])||'" AS shift
+      ,"'||COALESCE(itemList[6], itemList[5], itemList[4], itemList[3], itemList[2], itemList[1])||'" AS processGroup
+      ,"'||COALESCE(itemList[7], itemList[6], itemList[5], itemList[4], itemList[3], itemList[2], itemList[1])||'" AS processName
+      ,"'||COALESCE(itemList[8], itemList[7], itemList[6], itemList[5], itemList[4], itemList[3], itemList[2], itemList[1])||'" AS operatorId
+      , '||  quote_literal(chr(65)) ||' AS pnlCategory, '||  quote_literal(chr(65)) ||' AS tag , "shiftDuration" as duration, 1.11111 AS percentage, 1 AS number              
+      FROM '|| tableName ||'
+      LIMIT 1)';
+  EXECUTE 'CREATE TEMPORARY TABLE tempTagsList2 AS (SELECT * FROM  tempTagsList1)';
+      
+  EXECUTE 'DELETE FROM tempTagsList1';
+  EXECUTE 'DELETE FROM tempTagsList2';
+
+
+
+
+
+
+
+  FOR i IN 1..4 LOOP
+    FOR counter IN 1..5 LOOP
+          col1Name := CONCAT(tagName[i], '_', counter);
+          col2Name := CONCAT(tagName[i], '_', counter, '_duration');
+          col3Name := CONCAT(tagName[i], '_', counter, '_number');
+          EXECUTE 'DROP TABLE IF exists temp1';
+          EXECUTE '
+          CREATE TEMPORARY TABLE temp1 AS 
+            (
+              SELECT 
+                "'||itemList[1]||'" AS Year
+                ,"'||COALESCE(itemList[2], itemList[1])||'" AS Month 
+                ,"'||COALESCE(itemList[3], itemList[2], itemList[1])||'" AS Week
+                ,"'||COALESCE(itemList[4], itemList[3], itemList[2], itemList[1])||'" AS Day
+                ,"'||COALESCE(itemList[5], itemList[4], itemList[3], itemList[2], itemList[1])||'" AS shift
+                ,"'||COALESCE(itemList[6], itemList[5], itemList[4], itemList[3], itemList[2], itemList[1])||'" AS processGroup
+                ,"'||COALESCE(itemList[7], itemList[6], itemList[5], itemList[4], itemList[3], itemList[2], itemList[1])||'" AS processName
+                ,"'||COALESCE(itemList[8], itemList[7], itemList[6], itemList[5], itemList[4], itemList[3], itemList[2], itemList[1])||'" AS operatorId
+                , '||quote_literal(tagName[i])||' AS pnlCategory
+                , '||col1Name|| ' AS tag 
+                , SUM(' ||  col2Name || ') AS duration
+                , SUM(' ||  col2Name || ') / SUM("totaltime") AS percentage
+                , SUM(' ||  col3Name || ') AS number              
+              FROM
+                  '|| tableName ||' t
+                  WHERE ' ||  col1Name || ' IS NOT NULL
+                  GROUP BY Year, Month, Week, Day, shift, processGroup, processName, operatorId, ' ||  col1Name || '
+            )';
+
+          EXECUTE 'DROP TABLE IF exists temp2';
+          EXECUTE 'CREATE TEMPORARY TABLE temp2 AS (SELECT * FROM tempTagsList1)';
+          EXECUTE 'DROP TABLE IF exists tempTagsList1';
+          EXECUTE 'CREATE TEMPORARY TABLE tempTagsList1 AS 
+                  (SELECT * FROM temp1
+                  UNION ALL 
+                  SELECT * FROM temp2)';
+    END LOOP;
+  END LOOP;
+  
+  
+  
+  
+    FOR i IN 1..7 LOOP
+      col1Name := CONCAT(tagName[i], 'Time');
+      col2Name := CONCAT(tagName[i], 'Number');
+      EXECUTE 'DROP TABLE IF exists temp1';
+      EXECUTE '
+      CREATE TEMPORARY TABLE temp1 AS 
+        (
+          SELECT 
+                "'||itemList[1]||'" AS Year
+                ,"'||COALESCE(itemList[2], itemList[1])||'" AS Month 
+                ,"'||COALESCE(itemList[3], itemList[2], itemList[1])||'" AS Week
+                ,"'||COALESCE(itemList[4], itemList[3], itemList[2], itemList[1])||'" AS Day
+                ,"'||COALESCE(itemList[5], itemList[4], itemList[3], itemList[2], itemList[1])||'" AS shift
+                ,"'||COALESCE(itemList[6], itemList[5], itemList[4], itemList[3], itemList[2], itemList[1])||'" AS processGroup
+                ,"'||COALESCE(itemList[7], itemList[6], itemList[5], itemList[4], itemList[3], itemList[2], itemList[1])||'" AS processName
+                ,"'||COALESCE(itemList[8], itemList[7], itemList[6], itemList[5], itemList[4], itemList[3], itemList[2], itemList[1])||'" AS operatorId
+                , '||quote_literal(tagName[i])||' AS pnlCategory
+                , '||quote_literal(chr(32))||' AS tag
+                , SUM("' ||  col1Name || '") AS duration
+                , SUM("' ||  col1Name || '") / SUM("totaltime") AS percentage
+                , SUM("' ||  col2Name || '") AS number              
+          FROM
+              '|| tableName ||' t
+              GROUP BY Year, Month, Week, Day, shift, processGroup, processName, operatorId
+        )';
+
+      EXECUTE 'DROP TABLE IF exists temp2';
+      EXECUTE 'CREATE TEMPORARY TABLE temp2 AS (SELECT * FROM tempTagsList2)';
+      EXECUTE 'DROP TABLE IF exists tempTagsList2';
+      EXECUTE 'CREATE TEMPORARY TABLE tempTagsList2 AS 
+              (SELECT * FROM temp1
+              UNION ALL 
+              SELECT * FROM temp2)';
+  END LOOP;
+  
+  EXECUTE ' UPDATE tempTagsList1 t1 
+            SET "percentage" = (t1."duration" / (t2."duration" + 0.000000001)) * t2."percentage"
+            FROM  tempTagsList2 t2
+            WHERE 
+                  t2."year"         = t1."year"         AND 
+                  t2."month"        = t1."month"        AND 
+                  t2."week"         = t1."week"         AND 
+                  t2."day"          = t1."day"          AND 
+                  t2."shift"        = t1."shift"        AND 
+                  t2."processgroup" = t1."processgroup" AND 
+                  t2."processname"  = t1."processname" ';  
+      EXECUTE 'CREATE TEMPORARY TABLE tempTagsList AS 
+              (SELECT * FROM tempTagsList1
+              UNION ALL 
+              SELECT * FROM tempTagsList2)';
+
+END;
+$func$;          
+
+--------------------  ************************************************************************
+--------------------                THE WAY THAT YOU CAN CALL THIS FUNCTION 
+--------------------  ************************************************************************
+SELECT gettingPnlCategoryDetail('ext_sanofii');
+
+-- SELECT * FROM tempTagsList
+-- WHERE "day" = 12 and "shift" = 'Nuit' and "pnlcategory" = 'planned'
+
+-- ORDER BY Year, Month, Week, Day, shift, processGroup, processName, operatorId
+
+-- SELECT sum("percentage") FROM tempTagsList1
+-- WHERE "day" = 12 and "shift" = 'Nuit' and "pnlcategory" = 'planned'
