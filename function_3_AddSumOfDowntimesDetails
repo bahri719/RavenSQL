@@ -12,6 +12,7 @@ DECLARE
   counter INTEGER;
   col1Name TEXT;
   col2Name TEXT;
+  col3Name TEXT;
 BEGIN -- list of all category that have sub tag
   tagName[1] := 'planned';
   tagName[2] := 'unplanned';
@@ -24,6 +25,7 @@ BEGIN -- list of all category that have sub tag
     FOR counter IN 1..5 LOOP
           col1Name := CONCAT(tagName[i], '_', counter);
           col2Name := CONCAT(tagName[i], '_', counter, '_duration');
+          col3Name := CONCAT(tagName[i], '_', counter, '_number');
           EXECUTE 'DROP TABLE IF exists tempNthTagTable_' || tableName;
           PERFORM  createTempNthTagTable(tableName, tagName[i], counter);
       
@@ -33,7 +35,8 @@ BEGIN -- list of all category that have sub tag
               SELECT 
                 t.*,
                 n."tagName"  AS ' ||  col1Name || ',
-                n."duration" AS ' ||  col2Name || '
+                n."duration" AS ' ||  col2Name || ',
+                n."Number"   AS ' ||  col3Name || '
                 
               FROM
                   tempSummation_'|| tableName ||' t
