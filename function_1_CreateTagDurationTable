@@ -26,7 +26,8 @@ BEGIN
           t."pnlCategory",
           t."tagName",
 
-          (SUM(t."duration") / 60000) AS "duration"
+          (SUM(t."duration") / 60000) AS "duration",
+          COUNT(t."duration") as "Number" 
 
         
       FROM tempAddedNecessary_%I  t
