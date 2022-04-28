@@ -15,6 +15,7 @@ BEGIN
           t."Month",
           t."Week",
           t."Day",
+          t."DateStamp",
           t."shift",
           t."processGroup",
           t."processName",
@@ -31,22 +32,29 @@ BEGIN
           SUM(t."scheduledTime") / 60000                AS "scheduledTime",
           
           SUM(t."producingDuration") / 60000            AS "producingTime",
-          
+          SUM(SIGN(t."producingDuration"))              AS "producingNumber",
+
           SUM(t."plannedDuration") / 60000              AS "plannedTime",
+          SUM(SIGN(t."plannedDuration"))                AS "plannedNumber",
           
           SUM(t."unplannedDuration") / 60000            AS "unplannedTime",
+          SUM(SIGN(t."unplannedDuration"))              AS "unplannedNumber",
           
           SUM(t."waitingDuration") / 60000              AS "waitingTime",
+          SUM(SIGN(t."waitingDuration"))                AS "waitingNumber",
           
           SUM(t."notScheduledDuration") / 60000         AS "notScheduledTime",
+          SUM(SIGN(t."notScheduledDuration"))           AS "notScheduledNumber",
           
           SUM(t."unknownDuration") / 60000              AS "unknownTime",
+          SUM(SIGN(t."unknownDuration"))                AS "unknownNumber",
           
-          SUM(t."uncollectedDuration") / 60000          AS "uncollectedTime"
+          SUM(t."uncollectedDuration") / 60000          AS "uncollectedTime",
+          SUM(SIGN(t."uncollectedDuration"))            AS "uncollectedNumber"
           
       FROM tempAddedNecessary_%I  t
-      GROUP BY t."Year", t."Month", t."Week", t."Day", t."shift", t."processGroup", t."processName", t."skuName", t."operatorId" , t."shiftDuration", t."targetRate", t."rateDenominator"
-      ORDER BY t."Year", t."Month", t."Week", t."Day", t."shift", t."processGroup", t."processName", t."skuName", t."operatorId" , t."shiftDuration", t."targetRate"
+      GROUP BY t."Year", t."Month", t."Week", t."Day", t."DateStamp", t."shift", t."processGroup", t."processName", t."skuName", t."operatorId" , t."shiftDuration", t."targetRate", t."rateDenominator"
+      ORDER BY t."Year", t."Month", t."Week", t."Day", t."DateStamp",  t."shift", t."processGroup", t."processName", t."skuName", t."operatorId" , t."shiftDuration", t."targetRate"
       )', sourceTableName, sourceTableName);
       
   EXECUTE 'DROP TABLE IF exists temp11';
@@ -57,6 +65,7 @@ BEGIN
                 t."Month",
                 t."Week",
                 t."Day",
+                t."DateStamp",
                 t."shift",
                 t."processGroup",
                 t."processName",
@@ -72,7 +81,16 @@ BEGIN
                 t."waitingTime",
                 t."notScheduledTime",
                 t."unknownTime",
-                t."uncollectedTime"
+                t."uncollectedTime",
+                t."producingNumber",
+                t."plannedNumber",
+                t."unplannedNumber",
+                t."waitingNumber",
+                t."notScheduledNumber",
+                t."unknownNumber",
+                t."uncollectedNumber",
+                t."producingTime" + t."plannedTime" + t."unplannedTime" + t."waitingTime" + t."notScheduledTime" + t."unknownTime" + t."uncollectedTime" AS totalTime
+
             FROM tempSummation_%I t);
             
             DROP TABLE IF exists tempSummation_%I;
