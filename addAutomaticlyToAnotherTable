@@ -12,13 +12,31 @@ end;
 $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100
-
-
-
-
-
+----------------------------------------------------------------
 CREATE TRIGGER trig_addTV2Shipping
   AFTER insert 
   ON external_display
   FOR EACH ROW
   EXECUTE PROCEDURE fn_addTV2Shipping();
+
+----------------------------------------------------------------
+-- trigger for other devices
+----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION fn_addOtherDevices2Shipping()
+  RETURNS "pg_catalog"."trigger" AS $BODY$ 
+begin
+INSERT INTO shipping (shipping_date, device_serial, ship_to_customer_id)
+       VALUES (CURRENT_DATE, NEW.device_serial, 1);
+return NEW;
+end;
+$BODY$
+  LANGUAGE plpgsql VOLATILE
+  COST 100
+----------------------------------------------------------------
+CREATE TRIGGER trig_addOtherDevices2Shipping
+  AFTER insert 
+  ON other_devices
+  FOR EACH ROW
+  EXECUTE PROCEDURE fn_addOtherDevices2Shipping();
+                    
+                    
