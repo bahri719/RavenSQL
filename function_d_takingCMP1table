@@ -1,0 +1,50 @@
+--------------------  ************************************************************************
+--------------------      TAKING THE CMP2 TABLE FOR A CUSTOMER DYNAMICALLY 
+--------------------  ************************************************************************
+
+CREATE OR REPLACE FUNCTION takingCMP1table(sourceTableName TEXT, _from TIMESTAMP, _to TIMESTAMP)
+  RETURNS TABLE (
+    id BIGINT,
+    Year SMALLINT,
+    Month SMALLINT,
+    Week SMALLINT,
+    Day SMALLINT,
+    DateStamp TIMESTAMP,
+    shift TEXT,
+    processGroup TEXT,
+    processName TEXT,
+    shiftDuration SMALLINT,
+    skuName TEXT,
+    operatorId TEXT,
+    output INTEGER,
+    ExpectedOutput double precision,
+    scheduledTime double precision,
+    producingTime double precision,
+    plannedTime double precision,
+    unplannedTime double precision,
+    waitingTime double precision,
+    notScheduledTime double precision,
+    unknownTime double precision,
+    uncollectedTime double precision,
+    producingNumber SMALLINT,
+    plannedNumber SMALLINT,
+    unplannedNumber SMALLINT,
+    waitingNumber SMALLINT,
+    notScheduledNumber SMALLINT,
+    unknownNumber SMALLINT,
+    uncollectedNumber SMALLINT,
+    totaltime double precision 
+  )
+LANGUAGE plpgsql AS
+$func$
+DECLARE 
+BEGIN 
+  RETURN QUERY
+  EXECUTE format(E'SELECT * FROM %I_cmp1', sourceTableName);
+END
+$func$;          
+
+--------------------  ************************************************************************
+--------------------                THE WAY THAT YOU CAN CALL THIS FUNCTION 
+--------------------  ************************************************************************
+SELECT * FROM takingCMP1table(split_part(split_part('{{ current_username() }}','@',2),'.',1));
