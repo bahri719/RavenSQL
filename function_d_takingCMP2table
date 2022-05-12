@@ -1,0 +1,26 @@
+--------------------  ************************************************************************
+--------------------      TAKING THE CMP2 TABLE FOR A CUSTOMER DYNAMICALLY 
+--------------------  ************************************************************************
+
+CREATE OR REPLACE FUNCTION takingCMP2table(sourceTableName TEXT)
+  RETURNS TABLE (
+    id BIGINT,
+    pnlCategory TEXT,
+    tagName TEXT,
+    duration FLOAT,
+    Number smallint,
+    rn smallint 
+  )
+LANGUAGE plpgsql AS
+$func$
+DECLARE 
+BEGIN 
+  RETURN QUERY
+  EXECUTE format(E'SELECT * FROM %I_cmp2', sourceTableName);
+END
+$func$;          
+
+--------------------  ************************************************************************
+--------------------                THE WAY THAT YOU CAN CALL THIS FUNCTION 
+--------------------  ************************************************************************
+SELECT * FROM takingCMP2table(split_part(split_part('{{ current_username() }}','@',2),'.',1));
