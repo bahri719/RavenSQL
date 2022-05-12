@@ -1,0 +1,37 @@
+--------------------  ************************************************************************
+--------------------    FIND THE Nth TAG IN EACH CATEGORY AND RELATED DURATION FOR PROCESSES 
+--------------------  ************************************************************************
+
+-- ****** caution ******  you must have been called function_1_CreateTagDurationTable_processes befor calling this function
+
+CREATE OR REPLACE FUNCTION createTempSortedTagTable(sourceTableName TEXT)
+  RETURNS VOID
+  LANGUAGE plpgsql AS
+$func$
+BEGIN
+  EXECUTE '
+  CREATE TEMPORARY TABLE tempSortedTagTable_'||sourceTableName||' AS
+    (
+      SELECT  *
+          FROM 
+          (
+            SELECT  *,
+            row_number() OVER (
+            PARTITION BY "Year", "Month", "Week", "Day", "shift", "processGroup", "processName", "skuName", "operatorId" , "shiftDuration", "targetRate", "pnlCategory" 
+            ORDER BY "Year", "Month", "Week", "Day", "shift", "processGroup", "processName", "skuName", "operatorId" , "shiftDuration", "targetRate", "pnlCategory", "duration" DESC ) as rn
+            FROM  tempTagsDuration_'||sourceTableName||'
+          ) x
+    )';
+END
+$func$;
+
+
+
+--------------------  ************************************************************************
+--------------------                THE WAY THAT YOU CAN CALL THIS FUNCTION 
+--------------------  ************************************************************************
+SELECT createAddedNecessaryTable('sanofii');
+SELECT createTagsDurationTable('sanofii');
+SELECT createTempSortedTagTable('sanofii');
+
+SELECT * FROM tempSortedTagTable_sanofii
