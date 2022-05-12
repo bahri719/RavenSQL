@@ -1,0 +1,57 @@
+--------------------  ************************************************************************
+--------------------     CALCUTATING THE DURATION OF 5 GREATEST DOWNTIME IN EACH CATEGORY 
+--------------------  ************************************************************************
+
+CREATE OR REPLACE FUNCTION addIDnubmerToTagTable(sourceTableName TEXT)
+  RETURNS VOID
+  LANGUAGE plpgsql AS
+$func$
+DECLARE 
+  tableName TEXT;
+BEGIN -- list of all category that have sub tag
+
+  tableName  := sourceTableName;
+  PERFORM  createTagsDurationTable(tableName);
+  PERFORM  makingCMP1file(tableName);
+          EXECUTE 'DROP TABLE IF exists tempSortedTagTable_' || tableName;
+          PERFORM  createTempSortedTagTable(tableName);
+      
+          EXECUTE '
+          CREATE TEMPORARY TABLE temp1 AS 
+          (
+              SELECT 
+                CAST(t.id AS BIGINT),
+                CAST(n."pnlCategory" AS TEXT),
+                CAST(n."tagName" AS TEXT),
+                CAST(n."duration" AS DOUBLE PRECISION),
+                CAST(n."Number" AS SMALLINT),
+                CAST(n."rn" AS SMALLINT)
+              FROM tempsortedTagTable_' || tableName || ' n
+              LEFT JOIN  '|| tableName ||'_cmp1 t
+                                    ON  t."year"          = n."Year"
+                                    AND t."month"         = n."Month"
+                                    AND t."week"          = n."Week" 
+                                    AND t."day"           = n."Day" 
+                                    AND COALESCE(t."shift",CAST(9876543210123456789 AS TEXT))         = COALESCE(n."shift",CAST(9876543210123456789 AS TEXT)) 
+                                    AND COALESCE(t."processgroup",CAST(99876543210123456789 AS TEXT)) = COALESCE(n."processGroup",CAST(99876543210123456789 AS TEXT)) 
+                                    AND COALESCE(t."processname",CAST(99876543210123456789 AS TEXT))  = COALESCE(n."processName",CAST(99876543210123456789 AS TEXT))
+                                    AND t."shiftduration" = n."shiftDuration"
+                                    AND COALESCE(t."skuname",CAST(99876543210123456789 AS TEXT))      = COALESCE(n."skuName",CAST(99876543210123456789 AS TEXT))
+                                    AND COALESCE(t."operatorid",9876543210123456789)                  = COALESCE(n."operatorId",9876543210123456789)
+              
+                                    )';
+
+          EXECUTE 'DROP TABLE IF exists ' || tableName ||'_cmp1' ;
+          EXECUTE 'DROP TABLE IF exists tempSortedTagTable_' || tableName ;
+          EXECUTE 'CREATE TABLE '|| tableName ||'_cmp2 AS 
+                    SELECT * FROM temp1';
+
+END
+$func$;          
+
+--------------------  ************************************************************************
+--------------------                THE WAY THAT YOU CAN CALL THIS FUNCTION 
+--------------------  ************************************************************************
+SELECT addIDnubmerToTagTable('sanofii');
+
+SELECT * FROM sanofii_cmp2
