@@ -1,0 +1,88 @@
+--------------------  ************************************************************************
+--------------------     CALCUTATING THE DURATION OF 5 GREATEST DOWNTIME IN EACH CATEGORY 
+--------------------  ************************************************************************
+
+CREATE OR REPLACE FUNCTION makingCMP1file(sourceTableName TEXT)
+  RETURNS VOID
+  LANGUAGE plpgsql AS
+$func$
+DECLARE
+BEGIN
+  EXECUTE 'DROP TABLE IF EXISTS public.'|| sourceTableName ||'_cmp1';
+  EXECUTE '
+    CREATE TABLE public.'|| sourceTableName ||'_cmp1 (
+    id BIGSERIAL PRIMARY KEY,
+    Year SMALLINT,
+    Month SMALLINT,
+    Week SMALLINT,
+    Day SMALLINT,
+    DateStamp TIMESTAMP,
+    shift TEXT,
+    processGroup TEXT,
+    processName TEXT,
+    shiftDuration SMALLINT,
+    skuName TEXT,
+    operatorId INTEGER,
+    output INTEGER,
+    ExpectedOutput double precision,
+    scheduledTime double precision,
+    producingTime double precision,
+    plannedTime double precision,
+    unplannedTime double precision,
+    waitingTime double precision,
+    notScheduledTime double precision,
+    unknownTime double precision,
+    uncollectedTime double precision,
+    producingNumber SMALLINT,
+    plannedNumber SMALLINT,
+    unplannedNumber SMALLINT,
+    waitingNumber SMALLINT,
+    notScheduledNumber SMALLINT,
+    unknownNumber SMALLINT,
+    uncollectedNumber SMALLINT,
+    totaltime double precision
+    )';
+    
+  PERFORM createSummationTable(sourceTableName);
+  EXECUTE '
+    INSERT INTO '|| sourceTableName ||'_cmp1 
+    (SELECT 
+    ROW_NUMBER() OVER(),
+    CAST("Year" AS SMALLINT),
+    CAST("Month" AS SMALLINT),
+    CAST("Week" AS SMALLINT),
+    CAST("Day" AS SMALLINT),
+    CAST("DateStamp" AS TIMESTAMP),
+    CAST("shift" AS TEXT),
+    CAST("processGroup" AS TEXT),
+    CAST("processName" AS TEXT),
+    CAST("shiftDuration" AS SMALLINT),
+    CAST("skuName" AS TEXT),
+    CAST("operatorId" AS INTEGER),
+    CAST("output" AS INTEGER),
+    CAST("ExpectedOutput" AS double precision),
+    CAST("scheduledTime" AS double precision),
+    CAST("producingTime" AS double precision),
+    CAST("plannedTime" AS double precision),
+    CAST("unplannedTime" AS double precision),
+    CAST("waitingTime" AS double precision),
+    CAST("notScheduledTime" AS double precision),
+    CAST("unknownTime" AS double precision),
+    CAST("uncollectedTime" AS double precision),
+    CAST("producingNumber" AS SMALLINT),
+    CAST("plannedNumber" AS SMALLINT),
+    CAST("unplannedNumber" AS SMALLINT),
+    CAST("waitingNumber" AS SMALLINT),
+    CAST("notScheduledNumber" AS SMALLINT),
+    CAST("unknownNumber" AS SMALLINT),
+    CAST("uncollectedNumber" AS SMALLINT),
+    CAST("totaltime" AS double precision)
+     FROM tempSummation_'|| sourceTableName ||')';
+END
+$func$;          
+--------------------  ************************************************************************
+--------------------                THE WAY THAT YOU CAN CALL THIS FUNCTION 
+--------------------  ************************************************************************
+SELECT makingCMP1file('sanofii');
+
+SELECT * FROM sanofii_cmp1
