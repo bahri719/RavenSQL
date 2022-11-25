@@ -1,0 +1,13 @@
+with temp AS (
+    SELECT DATE_TRUNC('DAY',shift_start::TIMESTAMP) AS date, id, process_name, ge, lt FROM datadump_p_2022 
+    ORDER BY ge
+),
+check_overlap AS (
+    SELECT t.*, tt.id AS exist, tt.ge, tt.lt from temp t
+    LEFT JOIN temp tt 
+    ON t.process_name = tt.process_name 
+    AND t.date = tt.date 
+    AND ((tt.ge < t.ge AND t.ge < tt.lt) OR (tt.ge < t.lt AND t.lt < tt.lt))
+)
+SELECT * FROM check_overlap 
+WHERE exist IS NOT NULL 
